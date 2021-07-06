@@ -19,11 +19,13 @@ def main():
     #1，爬取网页
     datalist = getDate(baseurl)
     #2，解析数据
-    savepath = "豆瓣电影top250.xls"
+    # savepath = "豆瓣电影top250.xls"
+    dbpath = "movie.db"
     #3，保存数据
-    saveDate(datalist,savepath)
-    askURL("https://movie.douban.com/top250?start=")
-
+    # saveDate(datalist,savepath)
+    # askURL("https://movie.douban.com/top250?start=")
+    #4.db数据
+    savaDate2DB(datalist,dbpath)
 
 #影片详情的规则，r,忽视特殊符号
 findLink = re.compile(r'<a href="(.*?)">')             #compie，生成正则表达式对象，表示规则（字符串的模式）
@@ -91,7 +93,7 @@ def getDate(baseurl):
             data.append(bd.strip())                     #去掉前后空格
 
             datalist.append(data)                       #把处理好的一部电影的信息放入datalist
-            print(data)
+
     return datalist
 
 
@@ -126,13 +128,50 @@ def saveDate(datalist,savepath):
     for i in range(0,8):
         sheet.write(0,i,col[i])           #列名字
     for i in range(0,250):
-        print("第%d条"%(i+1))
+        # print("第%d条"%(i+1))
         data = datalist[i]
         for j in range(0,8):
             sheet.write(i+1,j,data[j])    #数据
 
     book.save(savepath)  # 保存数据库
     print("save.....")
+
+
+def savaDate2DB(datalist,dbpath):
+    init_db(dbpath)
+    conn = sqlite3.connect(dbpath)
+    cur = conn.cursor()
+
+    for data in datalist:
+        for index in range(len(data)):
+            data[index] = '"'+data[index]+'"'
+            sql = '''insert into movie250(info_link,pic_link,cname,ename,score,rated,instrodction,info)values(%s)'''%",".join(data)
+        print(sql)
+            # cur.execute(sql)
+            # conn.commit()
+
+    cur.close()
+    conn.close()
+
+
+def init_db(dbpath):
+    sql = '''
+        create table movie250
+        (
+        id integer primary key autoincrement,
+        info_link text,
+        pic_link text,
+        cname varchar ,
+        ename numeric ,
+        instroduction tetx,
+        info text
+        )
+    ''' #创建数据表
+    conn = sqlite3.connect(dbpath)
+    cursor = conn.cursor()
+    cursor.execute(sql)
+    conn.commit()
+    conn.close()
 
 if __name__ == '__main__':
     main()
